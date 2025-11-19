@@ -5,10 +5,14 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
+import androidx.room.Room
+import com.example.lab_week_10.database.Total
+import com.example.lab_week_10.database.TotalDatabase
 import com.example.lab_week_10.viewmodels.TotalViewModel
 
 class MainActivity : AppCompatActivity() {
 
+    private val db by lazy { prepareDatabase() }
     private val viewModel by lazy {
         ViewModelProvider(this)[TotalViewModel::class.java]
     }
@@ -17,17 +21,41 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val totalTextView = findViewById<TextView>(R.id.text_total)
-        val incrementButton = findViewById<Button>(R.id.button_increment)
+        initializeValueFromDatabase()
+        prepareViewModel()
+    }
 
-        // Observe the LiveData from the ViewModel to update the UI
-        viewModel.total.observe(this) { newTotal ->
-            totalTextView.text = getString(R.string.text_total, newTotal)
+    private fun prepareDatabase(): TotalDatabase {
+        return Room.databaseBuilder(
+            applicationContext,
+            TotalDatabase::class.java, "total-database"
+        ).allowMainThreadQueries().build()
+    }
+
+    private fun initializeValueFromDatabase() {
+        val total = db.totalDao().getTotal(ID)
+        if (total.isEmpty()) {
+            db.totalDao().insert(Total(id = 1, total = 0))
+        } else {
+            viewModel.setTotal(total.first().total)
         }
+    }
 
-        // Set the click listener to update the data in the ViewModel
-        incrementButton.setOnClickListener {
+    private fun prepareViewModel(){
+        viewModel.total.observe(this) { total ->
+            findViewById<TextView>(R.id.text_total).text = getString(R.string.text_total, total)
+        }
+        findViewById<Button>(R.id.button_increment).setOnClickListener {
             viewModel.incrementTotal()
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        db.totalDao().update(Total(ID, viewModel.total.value!!))
+    }
+
+    companion object {
+        const val ID: Long = 1
     }
 }
