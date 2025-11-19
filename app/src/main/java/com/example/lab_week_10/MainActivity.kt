@@ -1,47 +1,33 @@
 package com.example.lab_week_10
 
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.lab_week_10.ui.theme.LAB_WEEK_10Theme
+import android.widget.Button
+import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
+import com.example.lab_week_10.viewmodels.TotalViewModel
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private val viewModel by lazy {
+        ViewModelProvider(this)[TotalViewModel::class.java]
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            LAB_WEEK_10Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+        setContentView(R.layout.activity_main)
+
+        val totalTextView = findViewById<TextView>(R.id.text_total)
+        val incrementButton = findViewById<Button>(R.id.button_increment)
+
+        // Observe the LiveData from the ViewModel to update the UI
+        viewModel.total.observe(this) { newTotal ->
+            totalTextView.text = getString(R.string.text_total, newTotal)
         }
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LAB_WEEK_10Theme {
-        Greeting("Android")
+        // Set the click listener to update the data in the ViewModel
+        incrementButton.setOnClickListener {
+            viewModel.incrementTotal()
+        }
     }
 }
